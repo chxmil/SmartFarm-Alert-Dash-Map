@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Farm Mapping with Square Boundaries</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Leaflet CSS & JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+    <!-- Leaflet.draw CSS & JS -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+      #map {
+        height: 500px;
+        width: 100%;
+      }
+      .content-section {
+        display: none;
+        animation: fadeIn 0.3s ease-in;
+      }
+      .active-section {
+        display: block;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+      .dashboard-card {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+      .dashboard-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+      }
+      .gradient-bg {
+        background: linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%);
+      }
+    </style>
+  </head>
+
+
+
+  <body class="bg-gray-100 min-h-screen flex">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-gradient-to-b from-green-800 to-green-600 text-white">
+      <div class="flex items-center space-x-3">
+        <i class="fas fa-leaf text-2xl"></i>
+        <h1 class="text-2xl font-bold">Smart Farm</h1>
+      </div>
+      <nav class="mt-6">
+        <ul>
+            <li class="px-6 py-3 hover:bg-green-700 cursor-poi nter transition-all flex items-center space-x-3" data-target="dashboard">
+                <i class="fas fa-gauge-high"></i>
+                
+                <a href="./dashboard.html"><span>Dashboard</span></a>
+            </li>
+            <li class="px-6 py-3 hover:bg-green-700 cursor-pointer transition-all flex items-center space-x-3" data-target="plantArea">
+                <i class="fas fa-map-location-dot"></i>
+                <a href="./index.html"><span>Plant Area</span></a>
+            </li>
+            <li class="px-6 py-3 hover:bg-green-700 cursor-pointer transition-all flex items-center space-x-3" data-target="plantInfo">
+                <i class="fas fa-seedling"></i>
+                <span>Plant Information</span>
+            </li>
+            <li class="px-6 py-3 hover:bg-green-700 cursor-pointer transition-all flex items-center space-x-3" data-target="plantGrowth">
+                <i class="fas fa-chart-line"></i>
+                <span>Plant Growth</span>
+            </li>
+            <li class="px-6 py-3 hover:bg-green-700 cursor-pointer transition-all flex items-center space-x-3" data-target="waterManagement">
+                <i class="fas fa-droplet"></i>
+                <span>Water Management</span>
+            </li>
+            <li class="px-6 py-3 hover:bg-green-700 cursor-pointer transition-all flex items-center space-x-3" data-target="sensorData">
+                <i class="fas fa-microchip"></i>
+                <span>Sensor Data</span>
+            </li>
+            <li class="px-6 py-3 hover:bg-green-700 cursor-pointer transition-all flex items-center space-x-3" data-target="alerts">
+                <i class="fas fa-bell"></i>
+                <a href="./Alert.html"><span>Alerts</span></a>
+            </li>
+        </ul>
+    </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 p-8 overflow-auto">
+      <h1 class="text-3xl font-bold text-green-600 mb-4">
+        Geospatial Farm Mapping 🌍🚜
+      </h1>
+
+      <!-- Map Container -->
+      <div id="map" class="bg-white shadow-md rounded-lg w-full max-w-4xl mb-4"></div>
+
+      <!-- Weather Card -->
+      <section class="bg-white shadow-lg rounded-xl p-6 mb-4 dashboard-card">
+        <div class="flex items-start justify-between">
+          <div>
+            <h3 class="text-xl font-semibold mb-4 flex items-center">
+              <i class="fas fa-cloud text-blue-500 mr-2"></i>
+              Weather Information
+            </h3>
+            <div class="grid grid-cols-2 gap-4">
+              <div class="flex items-center space-x-2">
+                <i class="fas fa-location-dot text-gray-500"></i>
+                <div>
+                  <p class="text-sm text-gray-500">Location</p>
+                  <p class="font-semibold" id="weatherLocation">Loading...</p>
+                </div>
+              </div>
+              <div class="flex items-center space-x-2">
+                <i class="fas fa-temperature-half text-red-500"></i>
+                <div>
+                  <p class="text-sm text-gray-500">Temperature</p>
+                  <p class="font-semibold">
+                    <span id="weatherTemp">-</span>°C
+                  </p>
+                </div>
+              </div>
+              <div class="flex items-center space-x-2">
+                <i class="fas fa-droplet text-blue-500"></i>
+                <div>
+                  <p class="text-sm text-gray-500">Humidity</p>
+                  <p class="font-semibold">
+                    <span id="weatherHumidity">-</span>%
+                  </p>
+                </div>
+              </div>
+              <div class="flex items-center space-x-2">
+                <i class="fas fa-wind text-gray-500"></i>
+                <div>
+                  <p class="text-sm text-gray-500">Wind Speed</p>
+                  <p class="font-semibold">
+                    <span id="weatherWind">-</span> m/s
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <img
+            id="weatherIcon"
+            src=""
+            alt="Weather Icon"
+            class="w-20 h-20 hidden"
+          />
+        </div>
+      </section>
+
+      <!-- Sensor Data Info -->
+      <div id="sensorData" class="mt-4 p-4 bg-white shadow-md rounded-lg w-full max-w-4xl hidden">
+        <h2 class="text-xl font-semibold">Sensor Data</h2>
+        <p><strong>Plant:</strong> <span id="plant"></span></p>
+        <p><strong>Temperature:</strong> <span id="temp"></span>°C</p>
+        <p><strong>Humidity:</strong> <span id="humidity"></span>%</p>
+        <p><strong>pH Level:</strong> <span id="ph"></span></p>
+        <p><strong>Rainfall:</strong> <span id="rainfall"></span> mm</p>
+      </div>
+
+      <!-- Sensor Data Table -->
+      <section class="bg-white shadow-lg rounded-xl p-6 dashboard-card mt-4">
+        <!-- Table content here -->
+      </section>
+    </main>
+
+    <script src="../index.js"></script>
+  </body>
+</html>

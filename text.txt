@@ -1,0 +1,66 @@
+import os
+
+# Define the project directory structure
+project_structure = {
+    "smart-farm-backend": [
+        "node_modules/",
+        "uploads/",
+        ".env",
+        "package.json",
+        "package-lock.json",
+        "server.js",
+        "index.js",
+        "config/",
+        "middleware/",
+        "routes/",
+        "public/",
+    ],
+    "config": [
+        "db.js",
+    ],
+    "middleware": [
+        "errorHandler.js",
+        "auth.js",
+        "upload.js",
+    ],
+    "routes": [
+        "sensors.js",
+        "plants.js",
+        "locations.js",
+        "alerts.js",
+        "auth.js",
+    ],
+    "public": [
+        "index.html",
+        "admin.html",
+        "styles.css",
+    ],
+    "uploads": [],
+    "frontend": [
+        "index.html",
+        "admin.html",
+        "assets/",
+        "scripts/",
+    ],
+    "assets": [
+        "logo.png",
+        "farm-map.png",
+    ],
+    "scripts": [
+        "app.js",
+        "websocket.js",
+    ],
+}
+
+# Function to display project structure
+def display_project_structure(base_path, structure, indent=0):
+    for key, value in structure.items():
+        print("  " * indent + f"📂 {key}")
+        if isinstance(value, list):
+            for item in value:
+                print("  " * (indent + 1) + f"📄 {item}")
+        else:
+            display_project_structure(os.path.join(base_path, key), value, indent + 1)
+
+# Display the project structure
+display_project_structure("smart-farm", project_structure)
