@@ -1,12 +1,14 @@
 const express = require("express");
 const mysql = require("mysql2");
 const bodyParser = require("body-parser");
-const cors = require("cors");
 const dotenv = require("dotenv");
 const multer = require("multer");
 const path = require("path");
 const http = require("http");
 const WebSocket = require("ws");
+
+
+const cors = require('cors');
 
 dotenv.config();
 
@@ -15,7 +17,8 @@ const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 const PORT = process.env.PORT || 3000;
 
-app.use(cors());
+app.use(cors({ origin: 'http://127.0.0.1:5501' }));
+
 app.use(bodyParser.json());
 app.use(express.static("uploads"));
 app.use(express.static("frontend")); // ✅ Serve frontend files
@@ -26,6 +29,9 @@ const db = mysql.createConnection({
     password: process.env.DB_PASS,
     database: process.env.DB_NAME
 });
+
+const locationRoutes = require('./routes/locations');
+app.use('/api/locations', locationRoutes);
 
 // ✅ Connect to MySQL
 db.connect((err) => {
@@ -82,6 +88,62 @@ app.get("/api/sensors", (req, res) => {
 });
 
 // ✅ API: Get Plant Locations with Sensor Data
+// app.get("/api/plant-locations", (req, res) => {
+//     const query = `
+//         SELECT 
+//             fl.location_id, 
+//             fl.lacate AS Plantation_area, 
+//             fl.Soil_type, 
+//             sd.plant_name, 
+//             sd.temperature, 
+//             sd.humidity, 
+//             sd.ph, 
+//             sd.rainfall,
+//             u.Urbana AS urban_offset
+//         FROM Farm_Location fl
+//         LEFT JOIN Sensor_Data sd ON fl.location_id = sd.location_id
+//         LEFT JOIN Urban u ON sd.Urban_id = u.id
+//         ORDER BY fl.location_id;
+//     `;
+
+//     db.query(query, (err, results) => {
+//         if (err) {
+//             console.error("❌ Error fetching plant locations:", err);
+//             return res.status(500).send(err);
+//         }
+
+//         console.log("✅ API Data Sent:", results);
+//         res.json(results);
+//     });
+// });
+
+app.put('/api/locations/:id', (req, res) => {
+    const { lacate, Soil_type } = req.body;
+
+    if (!lacate || !Soil_type) {
+        return res.status(400).json({ message: '❌ Both plantation name and soil type are required!' });
+    }
+
+    db.query('UPDATE Farm_Location SET lacate=?, Soil_type=? WHERE location_id=?',
+        [lacate, Soil_type, req.params.id],
+        (err, result) => {
+            if (err) {
+                console.error("❌ Error updating plantation:", err);
+                return res.status(500).json({ message: '❌ Error updating plantation!' });
+            }
+
+            if (result.affectedRows === 0) {
+                return res.status(404).json({ message: "⚠️ Plantation not found!" });
+            }
+
+            console.log("✅ Plantation updated successfully!", result);
+            res.json({ message: '✅ Plantation updated successfully!' });
+        });
+});
+
+
+
+
 app.get("/api/plant-locations", (req, res) => {
     const query = `
         SELECT 
@@ -141,9 +203,43 @@ function generateSensorData() {
       soil_moisture: (10 + Math.random() * 30).toFixed(1)
     };
   }
+  app.get("/api/sensor-history", (req, res) => {
+    const query = `
+        (SELECT timestamp, humidity, organic_matter AS soil_moisture, rainfall, Plantation_area 
+        FROM Sensor_Data 
+        WHERE Plantation_area = 'Center' 
+        ORDER BY timestamp DESC 
+        LIMIT 50)
+        
+        UNION ALL
+        
+        (SELECT timestamp, humidity, organic_matter AS soil_moisture, rainfall, Plantation_area 
+        FROM Sensor_Data 
+        WHERE Plantation_area = 'North' 
+        ORDER BY timestamp DESC 
+        LIMIT 50)
+        
+        UNION ALL
+        
+        (SELECT timestamp, humidity, organic_matter AS soil_moisture, rainfall, Plantation_area 
+        FROM Sensor_Data 
+        WHERE Plantation_area = 'South' 
+        ORDER BY timestamp DESC 
+        LIMIT 50);
+    `;
+
+    db.query(query, (err, results) => {
+        if (err) {
+            console.error("❌ Error fetching sensor history:", err);
+            return res.status(500).send(err);
+        }
+        res.json(results);
+    });
+});
+
+
+
   
-
-
 
 // ✅ API: Add New Sensor Data
 app.post("/api/sensors", (req, res) => {
