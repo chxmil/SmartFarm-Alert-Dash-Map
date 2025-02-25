@@ -29,6 +29,12 @@
         .gradient-bg {
             background: linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%);
         }
+        .canV {
+            display: block !important;
+            width: 100% !important;
+            height: 300px !important;
+        }
+
     </style>
 </head>
 
@@ -60,7 +66,7 @@
                     </li>
                     <li class="px-6 py-3 hover:bg-green-700 cursor-pointer transition-all flex items-center space-x-3" data-target="plantGrowth">
                         <i class="fas fa-chart-line"></i>
-                        <span>Plant Growth</span>
+                        <a href="./location.html"> <span>Plant Location</span></a>
                     </li>
                     <li class="px-6 py-3 hover:bg-green-700 cursor-pointer transition-all flex items-center space-x-3" data-target="waterManagement">
                         <i class="fas fa-droplet"></i>
@@ -173,13 +179,42 @@
                             <h3 id="suggestionText" class="text-xl"></h3>
                             <h3 id="suggestionS" class="text-xl"></h3>
                             </div>
+
                     </h3>
+
                 </div>
     
 
             </section>
+
+            <section>
+                <div class="p-6 bg-white shadow-lg rounded-xl">
+                <h3 class="text-xl font-semibold mb-4">Center</h3>
+                <canvas id="Center-humidity" class="canV" width="400" height="200"></canvas>
+                <canvas id="Center-moisture" class="canV" width="400" height="200"></canvas>
+                <canvas id="Center-rainfall" class="canV" width="400" height="200"></canvas>
+            </div>
+            
+            <div class="p-6 bg-white shadow-lg rounded-xl mt-6">
+                <h3 class="text-xl font-semibold mb-4">North</h3>
+                <canvas id="North-humidity" class="canV" width="400" height="200"></canvas>
+                <canvas id="North-moisture" class="canV" width="400" height="200"></canvas>
+                <canvas id="North-rainfall" class="canV" width="400" height="200"></canvas>
+            </div>
+            
+            <div class="p-6 bg-white shadow-lg rounded-xl mt-6">
+                <h3 class="text-xl font-semibold mb-4">South</h3>
+                <canvas id="South-humidity" class="canV" width="400" height="200"></canvas>
+                <canvas id="South-moisture" class="canV" width="400" height="200"></canvas>
+                <canvas id="South-rainfall" class="canV" width="400" height="200"></canvas>
+            </div>         
+                <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+                
+            </section>
+            
         </main>
     </div>
 </body>
 <script src="../dashboard.js"></script>
+
 </html>

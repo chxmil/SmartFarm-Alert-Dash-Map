@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plantation Area Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        #map {
+          height: 100%;
+          width: 120%;
+        }
+        .content-section {
+          display: none;
+          animation: fadeIn 0.3s ease-in;
+        }
+        .active-section {
+          display: block;
+        }
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
+        .dashboard-card {
+          transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .dashboard-card:hover {
+          transform: translateY(-5px);
+          box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        .gradient-bg {
+          background: linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%);
+        }
+      </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex">
+    <aside class="w-64 bg-gradient-to-b from-green-800 to-green-600 text-white">
+        <div class="p-6">
+            <div class="flex items-center space-x-3">
+                <i class="fas fa-leaf text-2xl"></i>
+                <h1 class="text-2xl font-bold">Smart Farm</h1>
+            </div>
+        </div>
+        <nav class="mt-6">
+            <ul>
+                <li class="px-6 py-3 hover:bg-green-700 cursor-pointer transition-all flex items-center space-x-3" data-target="dashboard">
+                    <i class="fas fa-gauge-high"></i>
+                    
+                    <a href="./dashboard.html"><span>Dashboard</span></a>
+                </li>
+                <li class="px-6 py-3 hover:bg-green-700 cursor-pointer transition-all flex items-center space-x-3" data-target="plantArea">
+                    <i class="fas fa-map-location-dot"></i>
+                    
+                    <a href="./index.html"><span>Plant Area</span></a>
+                </li>
+                <li class="px-6 py-3 hover:bg-green-700 cursor-pointer transition-all flex items-center space-x-3" data-target="plantInfo">
+                    <i class="fas fa-seedling"></i>
+                    <span>Plant Information</span>
+                </li>
+                <li class="px-6 py-3 hover:bg-green-700 cursor-pointer transition-all flex items-center space-x-3" data-target="plantGrowth">
+                    <i class="fas fa-chart-line"></i>
+                    <a href="./location.html"> <span>Plant Location</span></a>
+                </li>
+                <li class="px-6 py-3 hover:bg-green-700 cursor-pointer transition-all flex items-center space-x-3" data-target="waterManagement">
+                    <i class="fas fa-droplet"></i>
+                    <span>Water Management</span>
+                </li>
+                <li class="px-6 py-3 hover:bg-green-700 cursor-pointer transition-all flex items-center space-x-3" data-target="sensorData">
+                    <i class="fas fa-microchip"></i>
+                    <span>Sensor Data</span>
+                </li>
+                <li class="px-6 py-3 hover:bg-green-700 cursor-pointer transition-all flex items-center space-x-3" data-target="alerts">
+                    <i class="fas fa-bell"></i>
+                    <a href="./Alert.html"><span>Alerts</span></a>
+                </li>
+            </ul>
+        </nav>
+    </aside>
+    <main class="flex-1 p-8 overflow-auto">
+    <h1 class="text-3xl font-bold text-green-600 mb-4">Plantation Area Management</h1>
+
+    <!-- Plantation Form -->
+    <div class="bg-white shadow-md rounded-lg p-6 w-full max-w-lg mb-6">
+        <h2 class="text-xl font-semibold mb-2">Add New Plantation</h2>
+        <form id="plantationForm" class="space-y-4">
+            <input type="text" id="lacate" placeholder="Plantation Name" class="w-full p-2 border rounded" required>
+            <input type="text" id="Soil_type" placeholder="Soil Type" class="w-full p-2 border rounded" required>
+            <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded">Add Plantation</button>
+        </form>
+    </div>
+
+    <!-- Plantation List -->
+    <div class="bg-white shadow-md rounded-lg p-6 w-full max-w-3xl">
+        <h2 class="text-xl font-semibold mb-2">Existing Plantations</h2>
+        <table class="min-w-full bg-gray-50 border border-gray-200 rounded-md">
+            <thead>
+                <tr class="bg-green-300">
+                    <th class="border px-4 py-2">ID</th>
+                    <th class="border px-4 py-2">Name</th>
+                    <th class="border px-4 py-2">Soil Type</th>
+                    <th class="border px-4 py-2">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="plantationList"></tbody>
+        </table>
+    </div>
+
+    <script src="../location.js"></script>
+</main>
+</body>
+
+</html>
+<script>
+    
+document.addEventListener("DOMContentLoaded", function () {
+    loadPlantations();
+});
+
+// ✅ Fetch all plantations
+async function loadPlantations() {
+    try {
+        const response = await fetch("http://localhost:3000/api/locations");
+        const plantations = await response.json();
+        console.log("🌍 API Response:", plantations); 
+
+        const tableBody = document.getElementById("plantationList");
+        tableBody.innerHTML = ""; // Clear existing table content
+
+        plantations.forEach(plantation => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                <td class="border px-4 py-2">${plantation.location_id}</td>
+                <td class="border px-4 py-2">${plantation.lacate}</td>
+                <td class="border px-4 py-2">${plantation.Soil_type}</td>
+                <td class="border px-4 py-2">
+                    <button class="bg-blue-500 text-white px-2 py-1 rounded" onclick="editPlantation(${plantation.location_id}, '${plantation.lacate}', '${plantation.Soil_type}')">Edit</button>
+                    <button class="bg-red-500 text-white px-2 py-1 rounded" onclick="deletePlantation(${plantation.location_id})">Delete</button>
+                </td>
+            `;
+            tableBody.appendChild(row);
+        });
+    } catch (error) {
+        console.error("❌ Error fetching plantations:", error);
+    }
+}
+
+// ✅ Handle form submission
+document.getElementById("plantationForm").addEventListener("submit", async function (e) {
+    e.preventDefault();
+
+    const lacate = document.getElementById("lacate").value;
+    const Soil_type = document.getElementById("Soil_type").value;
+
+    try {
+        const response = await fetch("http://localhost:3000/api/locations", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ lacate, Soil_type })
+        });
+
+        const result = await response.json();
+        alert(result.message);
+        this.reset();
+        loadPlantations(); // ✅ Reload table after adding
+    } catch (error) {
+        console.error("❌ Error adding plantation:", error);
+    }
+    
+});
+// ✅ Edit plantation function (FIXED)
+function editPlantation(id, name, soil) {
+    const newName = prompt("Enter new plantation name:", name);
+    const newSoil = prompt("Enter new soil type:", soil);
+
+    if (!newName || !newSoil) {
+        alert("❌ Plantation name and soil type cannot be empty!");
+        return;
+    }
+
+    fetch(`http://localhost:3000/api/locations/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lacate: newName, Soil_type: newSoil })
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log("✅ Update Response:", data);
+        if (data.message) {
+            alert(data.message);
+            loadPlantations(); // ✅ Reload table after update
+        } else {
+            alert("⚠️ Error updating plantation! Check API logs.");
+        }
+    })
+    .catch(error => {
+        console.error("❌ Error updating plantation:", error);
+        alert("❌ Failed to update plantation. Check the console for more details.");
+    });
+}
+
+// ✅ Delete plantation
+function deletePlantation(id) {
+    if (confirm("Are you sure you want to delete this plantation?")) {
+        fetch(`http://localhost:3000/api/locations/${id}`, { method: "DELETE" })
+        .then(response => response.json())
+        .then(data => {
+            alert(data.message);
+            loadPlantations(); // ✅ Reload table after deletion
+        })
+        .catch(error => console.error("❌ Error deleting plantation:", error));
+    }
+}
+</script>

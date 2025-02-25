@@ -308,7 +308,158 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
+
+
+
   // เรียกใช้เมื่อโหลดหน้าเว็บ และอัปเดตทุก 10 นาที
   fetchWeatherData();
   setInterval(fetchWeatherData, 600000);
 });
+
+
+document.addEventListener("DOMContentLoaded", fetchSensorHistory);
+
+async function fetchSensorHistory() {
+    try {
+        const response = await fetch("http://localhost:3000/api/sensor-history");
+        if (!response.ok) throw new Error("Failed to fetch data");
+
+        const data = await response.json();
+        console.log("✅ Fetched Sensor Data:", data); // ✅ Debugging
+
+        if (!Array.isArray(data) || data.length === 0) {
+            console.error("❌ No valid sensor data received.");
+            return;
+        }
+
+        // Group data by Plantation Area (Center, North, South)
+        const groupedData = {
+            Center: { labels: [], humidity: [], soilMoisture: [], rainfall: [] },
+            North: { labels: [], humidity: [], soilMoisture: [], rainfall: [] },
+            South: { labels: [], humidity: [], soilMoisture: [], rainfall: [] },
+        };
+
+        data.forEach(entry => {
+            const location = entry.Plantation_area;
+            if (!groupedData[location]) return;  // Skip if unexpected data
+
+            groupedData[location].labels.push(new Date(entry.timestamp).toLocaleTimeString());
+            groupedData[location].humidity.push(entry.humidity);
+            groupedData[location].soilMoisture.push(entry.soil_moisture);
+            groupedData[location].rainfall.push(entry.rainfall);
+        });
+
+        console.log("✅ Grouped Data for Graphs:", groupedData);
+
+        updateGraphs(groupedData);
+    } catch (error) {
+        console.error("❌ Error fetching sensor history:", error);
+    }
+}
+
+function updateGraphs(groupedData) {
+    Object.keys(groupedData).forEach(location => {
+        const data = groupedData[location];
+
+        if (!data.labels.length) {
+            console.warn(`⚠️ No data available for ${location}`);
+            return;
+        }
+
+        createChart(`${location}-humidity`, `${location} Humidity`, "blue", data.labels, data.humidity);
+        createChart(`${location}-moisture`, `${location} Soil Moisture`, "green", data.labels, data.soilMoisture);
+        createChart(`${location}-rainfall`, `${location} Rainfall`, "red", data.labels, data.rainfall);
+    });
+}
+
+const charts = {}; // Store chart instances to prevent duplicate creation
+
+function createChart(canvasId, label, color, labels, values) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) {
+        console.error(`❌ Canvas ${canvasId} not found!`);
+        return;
+    }
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+        console.error(`❌ Context not found for ${canvasId}`);
+        return;
+    }
+
+    // Destroy existing chart before creating a new one (to prevent duplication)
+    if (charts[canvasId]) {
+        charts[canvasId].destroy();
+    }
+
+    charts[canvasId] = new Chart(ctx, {
+        type: "line",
+        data: {
+            labels: labels,
+            datasets: [{
+                label,
+                data: values,
+                borderColor: color,
+                borderWidth: 2,
+                fill: false,
+                tension: 0.3
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: { title: { display: true, text: "Time" } },
+                y: { beginAtZero: true }
+            }
+        }
+    });
+}
+
+function updateRealtimeChartsHistorical(data) {
+    const timeLabel = new Date(data.timestamp).toLocaleTimeString();
+
+    function updateChart(chart, value) {
+        if (!chart) {
+            console.warn("⚠️ Chart not found or not initialized.");
+            return;
+        }
+
+        if (chart.data.labels.length >= maxDataPoints) {
+            chart.data.labels.shift();
+            chart.data.datasets[0].data.shift();
+        }
+
+        chart.data.labels.push(timeLabel);
+        chart.data.datasets[0].data.push(value);
+        chart.update();
+    }
+
+    // ✅ Log the received real-time data
+    console.log("📡 Real-time Data Received:", data);
+
+    // ✅ Ensure correct plantation area updates
+    switch (data.Plantation_area) {
+        case "Center":
+            updateChart(charts["Center-humidity"], data.humidity);
+            updateChart(charts["Center-moisture"], data.soil_moisture);
+            updateChart(charts["Center-rainfall"], data.rainfall);
+            break;
+        case "North":
+            updateChart(charts["North-humidity"], data.humidity);
+            updateChart(charts["North-moisture"], data.soil_moisture);
+            updateChart(charts["North-rainfall"], data.rainfall);
+            break;
+        case "South":
+            updateChart(charts["South-humidity"], data.humidity);
+            updateChart(charts["South-moisture"], data.soil_moisture);
+            updateChart(charts["South-rainfall"], data.rainfall);
+            break;
+        default:
+            console.warn(`⚠️ Unknown Plantation Area: ${data.Plantation_area}`);
+    }
+}
+
+
+// Load Sensor Data at Start
+fetchSensorHistory();
